@@ -56,28 +56,36 @@ router.put("/assign-students/:id", async (req, res) => {
 
     // iterating through req array (studentArr)
     studentArr.forEach(async (student) => {
-      // to check whether the student is already assigned to that mentor to avoid duplicates
-      let find = mentorDetails.students.indexOf(student);
+      const studentDetails = await db
+        .collection("students")
+        .findOne({ name: student });
 
-      if (find === -1) {
-        // updating the student Array in mentor collection
-        const mentorData = await db
-          .collection("mentors")
-          .updateOne(
-            { _id: ObjectId(req.params.id) },
-            { $push: { students: student } }
-          );
+      if (studentDetails) {
+        // to check whether the student is already assigned to that mentor to avoid duplicates
+        let find = mentorDetails.students.indexOf(student);
 
-        // updating the mentor name in the student collection
-        const studentData = await db
-          .collection("students")
-          .updateOne(
-            { name: student },
-            { $set: { mentor: mentorDetails.name } }
-          );
-        flag = 1;
+        if (find === -1) {
+          // updating the student Array in mentor collection
+          const mentorData = await db
+            .collection("mentors")
+            .updateOne(
+              { _id: ObjectId(req.params.id) },
+              { $push: { students: student } }
+            );
+
+          // updating the mentor name in the student collection
+          const studentData = await db
+            .collection("students")
+            .updateOne(
+              { name: student },
+              { $set: { mentor: mentorDetails.name } }
+            );
+          flag = 1;
+        } else {
+          console.log(`${student} is already assigned to requested mentor`);
+        }
       } else {
-        console.log(`${student} is already assigned to requested mentor`);
+        console.log(`${student} is not available`);
       }
     });
 
